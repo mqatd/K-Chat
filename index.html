@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatroom App</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; margin:0; padding:0; }
+    #loginDiv, #chatDiv { max-width:600px; margin:50px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+    #chat { border:1px solid #ccc; height:400px; overflow-y:scroll; padding:10px; background:#fafafa; border-radius:5px; margin-bottom:10px;}
+    .message { margin-bottom:10px; padding:5px 10px; border-radius:5px; display:inline-block; max-width:80%; word-wrap:break-word; position:relative;}
+    .msgUser { font-weight:bold; margin-right:5px;}
+    .timestamp { font-size:0.75em; color:#555; margin-left:5px;}
+    .editBtn, .delBtn { margin-left:5px; cursor:pointer; color:blue; font-size:0.8em;}
+    #messageInput { width:75%; padding:8px; border-radius:5px; border:1px solid #ccc;}
+    #sendBtn { width:20%; padding:8px; border-radius:5px; border:none; background:#4CAF50; color:white; cursor:pointer;}
+    #sendBtn:hover { background:#45a049;}
+    @media(max-width:650px){ #messageInput{width:70%;} #sendBtn{width:28%;} }
+  </style>
+</head>
+<body>
+  <div id="loginDiv">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username"/><br><br>
+    <input type="password" id="password" placeholder="Password"/><br><br>
+    <button id="loginBtn">Login</button>
+    <p id="loginMsg" style="color:red;"></p>
+  </div>
+
+  <div id="chatDiv" style="display:none;">
+    <h2>Chatroom</h2>
+    <div id="chat"></div>
+    <input type="text" id="messageInput" placeholder="Type a message"/>
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+  <script>
+    // ✅ Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAufi9RHoyxn9GV7VeflZC-TbcV7YWQEmE",
+      authDomain: "kchat-c8731.firebaseapp.com",
+      databaseURL: "https://kchat-c8731-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "kchat-c8731",
+      storageBucket: "kchat-c8731.firebasestorage.app",
+      messagingSenderId: "874206149712",
+      appId: "1:874206149712:web:7e89c09f4be5d55366e555"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Dummy users
+    const users = {"user1":"pass1","user2":"pass2","user3":"pass3","user4":"pass4",
+                   "user5":"pass5","user6":"pass6","user7":"pass7","user8":"pass8",
+                   "user9":"pass9","user10":"pass10"};
+
+    const loginDiv = document.getElementById('loginDiv');
+    const chatDiv = document.getElementById('chatDiv');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginMsg = document.getElementById('loginMsg');
+    const chatEl = document.getElementById('chat');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    let currentUser = "";
+    const userColors = {};
+    function getUserColor(user){
+      if(!userColors[user]){ const hue=Math.floor(Math.random()*360); userColors[user]=`hsl(${hue},70%,85%)`; }
+      return userColors[user];
+    }
+
+    loginBtn.addEventListener('click', () => {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      if(users[username] && users[username]===password){
+        currentUser=username;
+        loginDiv.style.display='none';
+        chatDiv.style.display='block';
+      } else { loginMsg.textContent="Invalid username or password!"; }
+    });
+
+    sendBtn.addEventListener('click', () => {
+      const msg = messageInput.value;
+      if(msg.trim()!==""){ db.ref('messages').push({ user:currentUser, text:msg, timestamp:Date.now() }); messageInput.value=''; }
+    });
+
+    db.ref('messages').on('child_added', displayMessage);
+    db.ref('messages').on('child_changed', displayMessage);
+    db.ref('messages').on('child_removed', snapshot => { const msgEl=document.getElementById(snapshot.key); if(msgEl) msgEl.remove(); });
+
+    function displayMessage(snapshot){
+      const msg=snapshot.val();
+      let msgDiv=document.getElementById(snapshot.key);
+      if(!msgDiv){ msgDiv=document.createElement('div'); msgDiv.className='message'; msgDiv.id=snapshot.key; chatEl.appendChild(msgDiv); }
+      msgDiv.style.background=getUserColor(msg.user);
+      const date=new Date(msg.timestamp); const time=date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      msgDiv.innerHTML=`<span class="msgUser">${msg.user}:</span> ${msg.text} <span class="timestamp">${time}</span>`;
+      if(msg.user===currentUser){
+        const editBtn=document.createElement('span'); editBtn.textContent="Edit"; editBtn.className='editBtn';
+        editBtn.onclick=()=>{ const newText=prompt("Edit message:",msg.text); if(newText && newText.trim()!==""){ db.ref('messages/'+snapshot.key).update({text:newText}); } };
+        const delBtn=document.createElement('span'); delBtn.textContent="Delete"; delBtn.className='delBtn';
+        delBtn.onclick=()=>{ if(confirm("Delete this message?")) db.ref('messages/'+snapshot.key).remove(); };
+        msgDiv.appendChild(editBtn); msgDiv.appendChild(delBtn);
+      }
+      chatEl.scrollTop=chatEl.scrollHeight;
+    }
+  </script>
+</body>
+</html>
