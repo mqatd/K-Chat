@@ -1,108 +1,85 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>Chatroom App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Melle melle ennil (cover) – Video</title>
   <style>
-    body { font-family: Arial; background: #f2f2f2; margin:0; padding:0; }
-    #loginDiv, #chatDiv { max-width:600px; margin:50px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2);}
-    #chat { border:1px solid #ccc; height:400px; overflow-y:scroll; padding:10px; background:#fafafa; border-radius:5px; margin-bottom:10px;}
-    .message { margin-bottom:10px; padding:5px 10px; border-radius:5px; display:inline-block; max-width:80%; word-wrap:break-word; position:relative;}
-    .msgUser { font-weight:bold; margin-right:5px;}
-    .timestamp { font-size:0.75em; color:#555; margin-left:5px;}
-    .editBtn, .delBtn { margin-left:5px; cursor:pointer; color:blue; font-size:0.8em;}
-    #messageInput { width:75%; padding:8px; border-radius:5px; border:1px solid #ccc;}
-    #sendBtn { width:20%; padding:8px; border-radius:5px; border:none; background:#4CAF50; color:white; cursor:pointer;}
-    #sendBtn:hover { background:#45a049;}
-    @media(max-width:650px){ #messageInput{width:70%;} #sendBtn{width:28%;} }
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 50% -200px, rgba(0,0,0,0.08), transparent),
+                  linear-gradient(180deg, rgba(0,0,0,0.02), transparent 200px);
+      display: grid;
+      place-items: center;
+      min-height: 100svh;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(100%, 820px);
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(18px, 2vw + 12px, 22px);
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .video-wrap {
+      position: relative;
+      aspect-ratio: 16 / 9; /* keeps a nice shape on load */
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0.75;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div id="loginDiv">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username"/><br><br>
-    <input type="password" id="password" placeholder="Password"/><br><br>
-    <button id="loginBtn">Login</button>
-    <p id="loginMsg" style="color:red;"></p>
-  </div>
+  <main class="card">
+    <h1>Melle melle ennil (cover) – Arya Dhayal (480P)</h1>
 
-  <div id="chatDiv" style="display:none;">
-    <h2>Chatroom</h2>
-    <div id="chat"></div>
-    <input type="text" id="messageInput" placeholder="Type a message"/>
-    <button id="sendBtn">Send</button>
-  </div>
+    <div class="video-wrap">
+      <!-- If the MP4 is in the SAME folder as this HTML, the relative path below will just work. -->
+      <!-- If you're hosting it elsewhere, replace src with the full URL (remember to URL-encode spaces and parentheses). -->
+      <video controls playsinline preload="metadata" poster="" aria-label="Melle melle ennil (cover) – Arya Dhayal (480P)">
+        <source src="Melle melle ennil (cover) - Arya Dhayal(480P).mp4" type="video/mp4" />
+        <!-- Optional additional source for broader compatibility
+        <source src="Melle melle ennil (cover) - Arya Dhayal(480P).webm" type="video/webm" />
+        -->
+        <p>Your browser doesn’t support HTML5 video. 
+          <a href="Melle melle ennil (cover) - Arya Dhayal(480P).mp4">Download the video</a> instead.
+        </p>
+      </video>
+    </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
-  <script>
-    // ✅ Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyAufi9RHoyxn9GV7VeflZC-TbcV7YWQEmE",
-      authDomain: "kchat-c8731.firebaseapp.com",
-      databaseURL: "https://kchat-c8731-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "kchat-c8731",
-      storageBucket: "kchat-c8731.firebasestorage.app",
-      messagingSenderId: "874206149712",
-      appId: "1:874206149712:web:7e89c09f4be5d55366e555"
-    };
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Dummy users
-    const users = {"user1":"pass1","user2":"pass2","user3":"pass3","user4":"pass4",
-                   "user5":"pass5","user6":"pass6","user7":"pass7","user8":"pass8",
-                   "user9":"pass9","user10":"pass10"};
-
-    const loginDiv = document.getElementById('loginDiv');
-    const chatDiv = document.getElementById('chatDiv');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginMsg = document.getElementById('loginMsg');
-    const chatEl = document.getElementById('chat');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-
-    let currentUser = "";
-    const userColors = {};
-    function getUserColor(user){
-      if(!userColors[user]){ const hue=Math.floor(Math.random()*360); userColors[user]=`hsl(${hue},70%,85%)`; }
-      return userColors[user];
-    }
-
-    loginBtn.addEventListener('click', () => {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      if(users[username] && users[username]===password){
-        currentUser=username;
-        loginDiv.style.display='none';
-        chatDiv.style.display='block';
-      } else { loginMsg.textContent="Invalid username or password!"; }
-    });
-
-    sendBtn.addEventListener('click', () => {
-      const msg = messageInput.value;
-      if(msg.trim()!==""){ db.ref('messages').push({ user:currentUser, text:msg, timestamp:Date.now() }); messageInput.value=''; }
-    });
-
-    db.ref('messages').on('child_added', displayMessage);
-    db.ref('messages').on('child_changed', displayMessage);
-    db.ref('messages').on('child_removed', snapshot => { const msgEl=document.getElementById(snapshot.key); if(msgEl) msgEl.remove(); });
-
-    function displayMessage(snapshot){
-      const msg=snapshot.val();
-      let msgDiv=document.getElementById(snapshot.key);
-      if(!msgDiv){ msgDiv=document.createElement('div'); msgDiv.className='message'; msgDiv.id=snapshot.key; chatEl.appendChild(msgDiv); }
-      msgDiv.style.background=getUserColor(msg.user);
-      const date=new Date(msg.timestamp); const time=date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      msgDiv.innerHTML=`<span class="msgUser">${msg.user}:</span> ${msg.text} <span class="timestamp">${time}</span>`;
-      if(msg.user===currentUser){
-        const editBtn=document.createElement('span'); editBtn.textContent="Edit"; editBtn.className='editBtn';
-        editBtn.onclick=()=>{ const newText=prompt("Edit message:",msg.text); if(newText && newText.trim()!==""){ db.ref('messages/'+snapshot.key).update({text:newText}); } };
-        const delBtn=document.createElement('span'); delBtn.textContent="Delete"; delBtn.className='delBtn';
-        delBtn.onclick=()=>{ if(confirm("Delete this message?")) db.ref('messages/'+snapshot.key).remove(); };
-        msgDiv.appendChild(editBtn); msgDiv.appendChild(delBtn);
-      }
-      chatEl.scrollTop=chatEl.scrollHeight;
-    }
-  </script>
+    <p class="note">Tip: If you host the file on the web, encode the name like
+      <code>Melle%20melle%20ennil%20(cover)%20-%20Arya%20Dhayal(480P).mp4</code> 
+      (spaces → <code>%20</code>, <code>(</code> → <code>%28</code>, <code>)</code> → <code>%29</code> if needed).
+    </p>
+  </main>
 </body>
 </html>
